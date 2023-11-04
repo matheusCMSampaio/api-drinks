@@ -3,7 +3,6 @@
 <head>
     <title>Exibir bebidas</title>
     <style>
-        /* ... Seu estilo existente ... */
         .card-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -56,7 +55,21 @@
         function limparResultado() {
             document.getElementById("resultado").innerHTML = "";
         }
+    
+        function mostrarInfoLike(info, idDrink) {
+            const likeInfo = document.getElementById("like-info");
+            likeInfo.style.display = "block";
+            likeInfo.innerHTML = info;
+            fetch(`/curtir/${idDrink}`, {
+                method: 'POST',
+                body: JSON.stringify({ info: info, idDrink: idDrink }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
     </script>
+    
 </head>
 <body>
     <h1>Informações sobre Bebidas</h1>
@@ -86,11 +99,14 @@
                                     <li>{{ ingredientes }} - {{ medidas }}</li>
                                 {% endif %}
                             {% endfor %}
+                            
                         </ul>
+                        <button onclick="mostrarInfoLike('{{ task['strDrink'] }}', '{{ task['idDrink'] }}')">Curtir</button>
                     </div>
                 </div>
             </div>
         {% endfor %}
     </div>
+    <div id="like-info" style="display: none;"></div>
 </body>
 </html>
