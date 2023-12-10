@@ -60,6 +60,8 @@
             const likeInfo = document.getElementById("like-info");
             likeInfo.style.display = "block";
             likeInfo.innerHTML = info;
+    
+            // Enviar a solicitação AJAX para o servidor Flask
             fetch(`/curtir/${idDrink}`, {
                 method: 'POST',
                 body: JSON.stringify({ info: info, idDrink: idDrink }),

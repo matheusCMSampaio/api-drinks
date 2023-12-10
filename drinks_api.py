@@ -1,12 +1,20 @@
-from flask import Flask, render_template, request, url_for, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify
 import requests
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import oracledb
-connection = oracledb.connect(user="xxxxxxx", password="xxxxxx", dsn="oracle.fiap.com.br/orcl")
+
+connection = oracledb.connect(user="rm550489", password="140704", dsn="oracle.fiap.com.br/orcl")
 
 app = Flask(__name__)
-tras = Translator()
 tasks = []
+
+def translate_text(text):
+    try:
+        translated_text = GoogleTranslator(source='auto', target='pt').translate(text)
+        return translated_text
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return text
 
 def pegar_info(bebida):
     url = f'https://www.thecocktaildb.com/api/json/v1/1/search.php?s={bebida}'
@@ -15,12 +23,12 @@ def pegar_info(bebida):
     
     if 'drinks' in data:
         for drink in data['drinks']:
-            drink['strInstructions'] = tras.translate(drink['strInstructions'], dest='pt').text
-            drink['strCategory'] = tras.translate(drink['strCategory'], dest='pt').text
-            drink['strGlass'] = tras.translate(drink['strGlass'], dest='pt').text
+            drink['strInstructions'] = translate_text(drink['strInstructions'])
+            drink['strCategory'] = translate_text(drink['strCategory'])
+            drink['strGlass'] = translate_text(drink['strGlass'])
             tasks.append(drink)
 
-    return redirect(url_for('index'))
+    return redirect('/')
 
 @app.route('/')
 def index():
@@ -29,11 +37,14 @@ def index():
 @app.route('/pegar_bebida', methods=['POST'])
 def pegar_bebida():
     nova_bebida = request.form.get('bebida')
-    return pegar_info(nova_bebida)
+    
+    if nova_bebida:
+        return pegar_info(nova_bebida)
+
+    return redirect('/')
 
 @app.route('/curtir/<idDrink>', methods=['POST'])
 def curtir(idDrink):
-    
     data = request.get_json()
     info = data['info']
     cursor = connection.cursor()
@@ -44,9 +55,10 @@ def curtir(idDrink):
     drink = data['drinks'][0]
     
     sql_insert = f"""
-    INSERT INTO t_drinks(nm_nome, ds_categoria, nm_copo)
-    VALUES('{drink['strDrink']}', '{drink['strCategory']}', '{drink['strGlass']}')
+        INSERT INTO t_drinks(id_drink, nm_nome, ds_categoria, nm_copo)
+        VALUES('{drink['idDrink']}', '{drink['strDrink']}', '{drink['strCategory']}', '{drink['strGlass']}')
     """
+
     cursor.execute(sql_insert)
     connection.commit()
     cursor.close()
